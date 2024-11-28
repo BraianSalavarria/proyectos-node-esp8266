@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de LED</title>
+    <style>
+        /* Estilo global */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: radial-gradient(circle, #2193b0, #6dd5ed);
+            color: #fff;
+        }
+
+        /* Contenedor principal */
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            width: 320px;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #f0f0f0;
+        }
+
+        label {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            display: block;
+            color: #ffffffcc;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.8);
+            transition: background 0.3s;
+        }
+
+        input[type="text"]:focus {
+            background-color: #fff;
+        }
+
+        input[type="text"]::placeholder {
+            color: #777;
+        }
+
+        /* Estilo de los botones */
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            color: #fff;
+            background-color: #ff5e57;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            display: inline-block;
+        }
+
+        button:hover {
+            background-color: #ff7f7a;
+            transform: translateY(-2px);
+        }
+
+        .btn-apagar {
+            background-color: #4CAF50;
+        }
+
+        .btn-apagar:hover {
+            background-color: #66bb6a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control de LED</h1>
+        <label>Ingresar IP:</label>
+        <input type="text" id="ip" placeholder="Ej: 192.168.0.1" value="192.168.100.13">
+        
+        <button onclick="controlLed('encender')">Encender</button>
+        <button class="btn-apagar" onclick="controlLed('apagar')">Apagar</button>
+    </div>
+
+    <script>
+        function controlLed(accion) {
+            const ip = document.getElementById('ip').value;
+            if (!ip) {
+                alert("Por favor, ingresa una IP válida.");
+                return;
+            }
+
+            const url = `http://${ip}/${accion}`;
+
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error("No se pudo conectar al ESP8266.");
+                    }
+                })
+                .then(data => {
+                    console.log(data); // Muestra el mensaje de respuesta del servidor
+                    //alert(`LED ${accion === 'encender' ? 'encendido' : 'apagado'}`);
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Error: No se pudo conectar al dispositivo.");
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+#include <IRremoteESP8266.h> //libreria que debo importar para que funcione con el esp8266 node mcu lolin v3
+#include <IRrecv.h>
+#include <IRutils.h>
+
+const uint16_t receptorPin = 4;  // GPIO 4 (D2 en NodeMCU)
+IRrecv irrecv(receptorPin);
+decode_results resultados;
+
+void setup() {
+  Serial.begin(115200);
+  irrecv.enableIRIn();  // Inicia el receptor IR
+}
+
+void loop() {
+  if (irrecv.decode(&resultados)) {
+    // Imprime el código recibido en hexadecimal
+    Serial.print("Código recibido: ");
+    Serial.println(resultados.value, HEX);
+    
+    // Imprime el protocolo de la señal
+    Serial.print("Protocolo: ");
+    if (resultados.decode_type == NEC) {
+      Serial.println("NEC");
+    } else if (resultados.decode_type == SONY) {
+      Serial.println("SONY");
+    } else if (resultados.decode_type == RC5) {
+      Serial.println("RC5");
+    } else if (resultados.decode_type == RC6) {
+      Serial.println("RC6");
+    } else if (resultados.decode_type == SAMSUNG) {
+      Serial.println("SAMSUNG");
+    } else if (resultados.decode_type == UNKNOWN) {
+      Serial.println("DESCONOCIDO");
+    } else {
+      Serial.println("Otro");
+    }
+
+    irrecv.resume();  // Prepara el receptor para la próxima señal
+  }
+}
+ // este codigo detecta los protocolos (los comunes) y el codigo
+
+
+
+//este codigo es para protocolos desconocidos y complejos, donde se clona la señal en bruto:
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <IRutils.h>
+
+const uint16_t receptorPin = 4;  // GPIO 4 (D2 en NodeMCU)
+IRrecv irrecv(receptorPin);
+decode_results resultados;
+
+void setup() {
+  Serial.begin(115200);
+  irrecv.enableIRIn();  // Inicia el receptor IR
+}
+
+void loop() {
+  if (irrecv.decode(&resultados)) {
+    Serial.print("Código recibido: ");
+    Serial.println(resultados.value, HEX);
+
+    Serial.print("Protocolo: ");
+    if (resultados.decode_type == UNKNOWN) {
+      Serial.println("DESCONOCIDO");
+    } else {
+      Serial.println(resultados.decode_type);
+    }
+
+    // Imprime los datos en bruto en ticks (sin necesidad de USECPERTICK)
+    Serial.println("Datos en bruto:");
+    for (uint16_t i = 0; i < resultados.rawlen; i++) {
+      Serial.print(resultados.rawbuf[i], DEC);
+      Serial.print(" ");
+    }
+    Serial.println();
+
+    irrecv.resume();  // Prepara el receptor para la próxima señal
+  }
+}
+
+
+
+
+

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Servos</title>
+    <style>
+        /* Estilo global */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: radial-gradient(circle, #2193b0, #6dd5ed);
+            color: #fff;
+        }
+
+        /* Contenedor principal */
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            width: 800px; /* Ajustado al nuevo ancho del video */
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            color: #f0f0f0;
+        }
+
+        label {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            display: block;
+            color: #ffffffcc;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.8);
+            transition: background 0.3s;
+        }
+
+        input[type="text"]:focus {
+            background-color: #fff;
+        }
+
+        input[type="text"]::placeholder {
+            color: #777;
+        }
+
+        /* Estilo del video */
+        #webcam {
+            width: 100%;
+            height: 600px; /* Ajustado a la nueva altura */
+            margin: 15px 0;
+            background-color: #333;
+            border-radius: 8px;
+        }
+
+        /* Estilo de los botones */
+        .button-group {
+            display: grid;
+            grid-template-areas:
+                "left up right"
+                "left down right";
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            font-size: 1.1em;
+            color: #fff;
+            background-color: #ff5e57;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #ff7f7a;
+            transform: translateY(-2px);
+        }
+
+        .left { grid-area: left; }
+        .up { grid-area: up; }
+        .down { grid-area: down; }
+        .right { grid-area: right; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Servos</h1>
+        
+        <!-- Campo para la IP -->
+        <label>Ingresar IP:</label>
+        <input type="text" id="ip" placeholder="Ej: 192.168.0.1" value="192.168.100.13">
+        
+        <!-- Selector para los dispositivos de video -->
+        <select id="cameraSelect" onchange="changeCamera()">
+            <!-- Las opciones se llenarán dinámicamente -->
+        </select>
+
+        <!-- Elemento de video para mostrar la cámara seleccionada -->
+        <video id="webcam" autoplay playsinline></video>
+
+        <!-- Botones de control -->
+        <div class="button-group">
+            <button class="left" onclick="controlServo('izquierda')">Izquierda</button>
+            <button class="up" onclick="controlServo('arriba')">Arriba</button>
+            <button class="down" onclick="controlServo('abajo')">Abajo</button>
+            <button class="right" onclick="controlServo('derecha')">Derecha</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStream = null;
+
+        // Función para obtener todos los dispositivos de video y llenar el selector
+        async function getCameras() {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const cameraSelect = document.getElementById('cameraSelect');
+
+            videoDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || `Cámara ${cameraSelect.length + 1}`;
+                cameraSelect.appendChild(option);
+            });
+        }
+
+        // Función para cambiar la cámara
+        async function changeCamera() {
+            if (currentStream) {
+                // Detener el flujo de video actual antes de cambiar de cámara
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const videoElement = document.getElementById('webcam');
+            const cameraId = document.getElementById('cameraSelect').value;
+            
+            // Configurar la nueva cámara seleccionada
+            currentStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: cameraId }
+            });
+            videoElement.srcObject = currentStream;
+        }
+
+        // Inicializar al cargar la página
+        getCameras().then(changeCamera);
+       
+
+        function controlServo(direccion) {
+            const ip = document.getElementById('ip').value;
+            if (!ip) {
+                alert("Por favor, ingresa una IP válida.");
+                return;
+            }
+
+            const url = `http://${ip}/${direccion}`;
+
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error("No se pudo conectar al ESP8266.");
+                    }
+                })
+                .then(data => {
+                    console.log(data); // Muestra el mensaje de respuesta del servidor
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("Error: No se pudo conectar al dispositivo.");
+                });
+        }
+
+        // Agregar eventos de teclas direccionales
+        document.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    controlServo('izquierda');
+                    break;
+                case 'ArrowUp':
+                    controlServo('arriba');
+                    break;
+                case 'ArrowDown':
+                    controlServo('abajo');
+                    break;
+                case 'ArrowRight':
+                    controlServo('derecha');
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
